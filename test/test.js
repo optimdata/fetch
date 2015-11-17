@@ -1,3 +1,6 @@
+var fetch = http.fetch
+
+
 function readBlobAsText(blob) {
   if ('FileReader' in self) {
     return new Promise(function(resolve, reject) {
