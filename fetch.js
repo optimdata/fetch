@@ -309,15 +309,15 @@ Request.prototype.then = function(resolve, reject) {
   if (this.promise == null) {
     this.send()
   }
-  return this.promise.then(resolve, reject)
+  this.promise = this.promise.then(resolve, reject)
+  return this
 }
 
-function afterReducer(promise, callback) {
-  return promise.then(callback)
-}
-
-Request.prototype.after = function(callbacks) {
-  this.promise = callbacks.reduce(afterReducer, this.promise)
+Request.prototype.catch = function(error) {
+  if (this.promise == null) {
+    this.send()
+  }
+  this.promise = this.promise.catch(error)
   return this
 }
 
