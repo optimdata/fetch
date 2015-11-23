@@ -278,7 +278,9 @@ Request.prototype.send = function() {
 
     xhr.onabort = function() {
       request.isAborted = true
-      reject(new Error('Request was aborted'))
+      var error = new Error('Request was aborted')
+      error.request = request
+      reject(error)
     }
 
     xhr.onerror = function() {
