@@ -1,9 +1,9 @@
 {
-  "name": "whatwg-fetch",
-  "description": "A window.fetch polyfill.",
-  "version": "0.11.0",
+  "name": "fetchiu",
+  "description": "A cancellable fetch function",
+  "version": "1.0.0",
   "main": "fetch.js",
-  "repository": "github/fetch",
+  "repository": "optimdata/fetch",
   "licenses": [
     {
       "type": "MIT",
