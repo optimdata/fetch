@@ -254,6 +254,103 @@ var scope = {};
     return new Request(this)
   }
 
+  // Simulates a promise
+  Request.prototype.then = function(resolve, reject) {
+    if (this.promise == null) {
+      this.send()
+    }
+    this.promise = this.promise.then(resolve, reject)
+    return this
+  }
+
+  // Simulates a promise
+  Request.prototype.catch = function(error) {
+    if (this.promise == null) {
+      this.send()
+    }
+    this.promise = this.promise.catch(error)
+    return this
+  }
+
+  // Returns the XHR object
+  Request.prototype.getXHR = function() {
+    return this.xhr != null ? this.xhr : this.xhr = new XMLHttpRequest()
+  }
+
+  Request.prototype.isAborted = false
+  Request.prototype.xhr = null
+  Request.prototype.promise = null
+
+  // Sends the request and returns it
+  Request.prototype.send = function() {
+
+    var request = this
+
+    this.promise = new Promise(function(resolve, reject) {
+
+      var xhr = request.getXHR()
+
+      function responseURL() {
+        if ('responseURL' in xhr) {
+          return xhr.responseURL
+        }
+
+        // Avoid security warnings on getResponseHeader when not allowed by CORS
+        if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
+          return xhr.getResponseHeader('X-Request-URL')
+        }
+
+        return;
+      }
+
+      xhr.onload = function() {
+        var options = {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: headers(xhr),
+          url: responseURL()
+        }
+        var body = 'response' in xhr ? xhr.response : xhr.responseText;
+        resolve(new Response(body, options))
+      }
+
+      xhr.onerror = function() {
+        var error = new TypeError('Network request failed')
+        error.request = request
+        reject(error)
+      }
+
+      xhr.onabort = function() {
+        request.isAborted = true
+        var error = new Error('Request was aborted')
+        error.request = request
+        reject(error)
+      }
+
+      xhr.open(request.method, request.url, true)
+
+      if (request.credentials === 'include') {
+        xhr.withCredentials = true
+      }
+
+      if ('responseType' in xhr && support.blob) {
+        xhr.responseType = 'blob'
+      }
+
+      request.headers.forEach(function(value, name) {
+        xhr.setRequestHeader(name, value)
+      })
+
+      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
+    })
+  }
+
+  // Aborts the current request
+  Request.prototype.abort = function() {
+    if (this.xhr != null)
+      this.xhr.abort()
+  }
+
   function decode(body) {
     var form = new FormData()
     body.trim().split('&').forEach(function(bytes) {
@@ -326,61 +423,15 @@ var scope = {};
   self.Request = Request;
   self.Response = Response;
 
+  // Creates a request and returns it
   self.fetch = function(input, init) {
-    return new Promise(function(resolve, reject) {
-      var request
-      if (Request.prototype.isPrototypeOf(input) && !init) {
-        request = input
-      } else {
-        request = new Request(input, init)
-      }
-
-      var xhr = new XMLHttpRequest()
-
-      function responseURL() {
-        if ('responseURL' in xhr) {
-          return xhr.responseURL
-        }
-
-        // Avoid security warnings on getResponseHeader when not allowed by CORS
-        if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
-          return xhr.getResponseHeader('X-Request-URL')
-        }
-
-        return;
-      }
-
-      xhr.onload = function() {
-        var options = {
-          status: xhr.status,
-          statusText: xhr.statusText,
-          headers: headers(xhr),
-          url: responseURL()
-        }
-        var body = 'response' in xhr ? xhr.response : xhr.responseText;
-        resolve(new Response(body, options))
-      }
-
-      xhr.onerror = function() {
-        reject(new TypeError('Network request failed'))
-      }
-
-      xhr.open(request.method, request.url, true)
-
-      if (request.credentials === 'include') {
-        xhr.withCredentials = true
-      }
-
-      if ('responseType' in xhr && support.blob) {
-        xhr.responseType = 'blob'
-      }
-
-      request.headers.forEach(function(value, name) {
-        xhr.setRequestHeader(name, value)
-      })
-
-      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
-    })
+    var request
+    if (Request.prototype.isPrototypeOf(input) && !init) {
+      request = input
+    } else {
+      request = new Request(input, init)
+    }
+    return request.send()
   }
   self.fetch.polyfill = true
 })(scope);
