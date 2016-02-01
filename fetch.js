@@ -1,4 +1,5 @@
 var scope = {};
+
 (function(self) {
   'use strict';
 
