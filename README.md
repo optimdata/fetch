@@ -1,21 +1,15 @@
-# window.fetch polyfill
+# fetch module
 
 This project adheres to the [Open Code of Conduct][code-of-conduct]. By participating, you are expected to uphold this code.
 [code-of-conduct]: http://todogroup.org/opencodeofconduct/#fetch/opensource@github.com
 
-The global `fetch` function is an easier way to make web requests and handle
-responses than using an XMLHttpRequest. This polyfill is written as closely as
+This module exposes the `fetch` function, which is an easier way to make web requests and handle
+responses than using an XMLHttpRequest. This module is written as closely as
 possible to the standard Fetch specification at https://fetch.spec.whatwg.org.
 
 ## Installation
 
-Available on [Bower](http://bower.io) as **fetch**.
-
-```sh
-$ bower install fetch
-```
-
-You'll also need a Promise polyfill for [older browsers](http://caniuse.com/#feat=promises).
+You'll need a Promise polyfill for [older browsers](http://caniuse.com/#feat=promises).
 
 ```sh
 $ bower install es6-promise
@@ -30,6 +24,26 @@ $ npm install whatwg-fetch --save
 For a node.js implementation, try [node-fetch](https://github.com/bitinn/node-fetch).
 
 For use with webpack, refer to [Using WebPack with shims and polyfills](http://mts.io/2015/04/08/webpack-shims-polyfills/).
+
+## Differences with [github/fetch](https://github.com/github/fetch)
+
+The major difference is the addition of the following methods and properties to the `Request` object:
+
+- `abort`: cancels a request
+- `send`: sends a request
+- `then`, `catch`: both update the internal promise object, making requests look like promises
+- `getXHR`: returns the used XHR object
+- `isAborted`: set to `true` when the request is aborted
+- `promise`: promise of the request
+- `xhr`: XMLHttpRequest object used for the request
+
+As a result, this module is not a polyfill. Instead, it exports the following objects to enable their import in environments that already have an implementation of `fetch`:
+
+- `Body`
+- `Request`
+- `Response`
+- `Headers`
+- `fetch`
 
 ## Usage
 
@@ -155,6 +169,26 @@ fetch('/users')
     console.log('request failed', error)
   })
 ```
+
+
+#### Aborting a request
+
+To abort (cancel) a `fetch`, simply call `abort()` on the request object returned by fetch:
+
+```javascript
+var request = fetch('/big-data')
+  .then(checkStatus)
+  .then(parseJSON)
+  .catch(function(error) {
+    if (request.isAborted) {
+      console.log('request was aborted')
+    }
+  })
+// Later…
+request.abort()
+```
+
+
 
 #### Sending cookies
 
